@@ -6,8 +6,10 @@ RUN java -Djarmode=layertools -jar application.jar extract
 
 # Download dockerize and cache that layer
 ARG DOCKERIZE_VERSION
-RUN wget -O dockerize.tar.gz https://github.com/jwilder/dockerize/releases/download/${DOCKERIZE_VERSION}/dockerize-alpine-linux-amd64-${DOCKERIZE_VERSION}.tar.gz
-RUN tar xzf dockerize.tar.gz
+#RUN wget -O dockerize.tar.gz https://github.com/jwilder/dockerize/releases/download/${DOCKERIZE_VERSION}/dockerize-alpine-linux-amd64-${DOCKERIZE_VERSION}.tar.gz
+
+COPY dockerize-alpine-linux-amd64.tar.gz .
+RUN tar xzf dockerize-alpine-linux-amd64.tar.gz
 RUN chmod +x dockerize
 
 
@@ -18,6 +20,9 @@ WORKDIR application
 
 # Dockerize
 COPY --from=builder application/dockerize ./
+
+COPY skywalking-agent.jar /agent/skywalking-agent.jar
+COPY agent.config /config/agent.config
 
 ARG EXPOSED_PORT
 EXPOSE ${EXPOSED_PORT}

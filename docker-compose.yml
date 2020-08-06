@@ -6,7 +6,9 @@ services:
     container_name: config-server
     mem_limit: 512M
     ports:
-     - 8888:8888
+      - 8888:8888
+    environment:
+      JAVA_OPTS: -javaagent:/agent/skywalking-agent.jar=agent.service_name=config-service,collector.backend_service=oap:11800
 
   discovery-server:
     image: springcommunity/spring-petclinic-discovery-server
@@ -14,73 +16,93 @@ services:
     mem_limit: 512M
     depends_on:
       - config-server
-    entrypoint: ["./dockerize","-wait=tcp://config-server:8888","-timeout=60s","--","java", "org.springframework.boot.loader.JarLauncher"]
+    entrypoint: ["./dockerize","-wait=tcp://config-server:8888","-timeout=60s","--","java", "-javaagent:/agent/skywalking-agent.jar=agent.service_name=discovery-service,collector.backend_service=oap:11800", "org.springframework.boot.loader.JarLauncher"]
     ports:
-     - 8761:8761
+      - 8761:8761
+    environment:
+      - JAVA_OPTS=-javaagent:/agent/skywalking-agent.jar
+      - SW_AGENT_NAME=discovery-server
+      - SW_AGENT_COLLECTOR_BACKEND_SERVICES=oap:11800
 
   customers-service:
     image: springcommunity/spring-petclinic-customers-service
     container_name: customers-service
     mem_limit: 512M
     depends_on:
-     - config-server
-     - discovery-server
-    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "org.springframework.boot.loader.JarLauncher"]
+      - config-server
+      - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java","-javaagent:/agent/skywalking-agent.jar=agent.service_name=customers-service,collector.backend_service=oap:11800", "org.springframework.boot.loader.JarLauncher"]
     ports:
-    - 8081:8081
+      - 8081:8081
+    environment:
+      - JAVA_OPTS=-javaagent:/agent/skywalking-agent.jar
+      - SW_AGENT_NAME=customers-service
+      - SW_AGENT_COLLECTOR_BACKEND_SERVICES=oap:11800
 
   visits-service:
     image: springcommunity/spring-petclinic-visits-service
     container_name: visits-service
     mem_limit: 512M
     depends_on:
-     - config-server
-     - discovery-server
-    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "org.springframework.boot.loader.JarLauncher"]
+      - config-server
+      - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java","-javaagent:/agent/skywalking-agent.jar=agent.service_name=visits-service,collector.backend_service=oap:11800", "org.springframework.boot.loader.JarLauncher"]
     ports:
-     - 8082:8082
+      - 8082:8082
+    environment:
+      - JAVA_OPTS=-javaagent:/agent/skywalking-agent.jar
+      - SW_AGENT_NAME=visits-service
+      - SW_AGENT_COLLECTOR_BACKEND_SERVICES=oap:11800
 
   vets-service:
     image: springcommunity/spring-petclinic-vets-service
     container_name: vets-service
     mem_limit: 512M
     depends_on:
-     - config-server
-     - discovery-server
-    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "org.springframework.boot.loader.JarLauncher"]
+      - config-server
+      - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java","-javaagent:/agent/skywalking-agent.jar=agent.service_name=vets-service,collector.backend_service=oap:11800", "org.springframework.boot.loader.JarLauncher"]
     ports:
-     - 8083:8083
+      - 8083:8083
+    environment:
+      - JAVA_OPTS=-javaagent:/agent/skywalking-agent.jar
+      - SW_AGENT_NAME=vets-service
+      - SW_AGENT_COLLECTOR_BACKEND_SERVICES=oap:11800
 
   api-gateway:
     image: springcommunity/spring-petclinic-api-gateway
     container_name: api-gateway
     mem_limit: 512M
     depends_on:
-     - config-server
-     - discovery-server
-    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "org.springframework.boot.loader.JarLauncher"]
+      - config-server
+      - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java","-javaagent:/agent/skywalking-agent.jar=agent.service_name=api-gateway,collector.backend_service=oap:11800", "org.springframework.boot.loader.JarLauncher"]
     ports:
-     - 8080:8080
+      - 8080:8080
+    environment:
+      - JAVA_OPTS=-javaagent:/agent/skywalking-agent.jar
+      - SW_AGENT_NAME=api-gateway
+      - SW_AGENT_COLLECTOR_BACKEND_SERVICES=oap:11800
 
   tracing-server:
     image: openzipkin/zipkin
     container_name: tracing-server
     mem_limit: 512M
     environment:
-    - JAVA_OPTS=-XX:+UnlockExperimentalVMOptions -Djava.security.egd=file:/dev/./urandom
+      - JAVA_OPTS=-XX:+UnlockExperimentalVMOptions -Djava.security.egd=file:/dev/./urandom
     ports:
-     - 9411:9411
+      - 9411:9411
 
   admin-server:
     image: springcommunity/spring-petclinic-admin-server
     container_name: admin-server
     mem_limit: 512M
     depends_on:
-     - config-server
-     - discovery-server
+      - config-server
+      - discovery-server
     entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=60s","--","java", "org.springframework.boot.loader.JarLauncher"]
     ports:
-     - 9090:9090
+      - 9090:9090
 
   ## Grafana / Prometheus
 
@@ -89,11 +111,52 @@ services:
     container_name: grafana-server
     mem_limit: 256M
     ports:
-    - 3000:3000
+      - 3000:3000
 
   prometheus-server:
     build: ./docker/prometheus
     container_name: prometheus-server
     mem_limit: 256M
     ports:
-    - 9091:9090
+      - 9091:9090
+
+  elasticsearch:
+    image: elasticsearch:7.5.0
+    container_name: elasticsearch
+    restart: always
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+  oap:
+    image: apache/skywalking-oap-server:8.0.0-es7
+    container_name: oap
+    depends_on:
+      - elasticsearch
+    links:
+      - elasticsearch
+    restart: always
+    ports:
+      - 11800:11800
+      - 12800:12800
+    environment:
+      SW_STORAGE: elasticsearch7
+      SW_STORAGE_ES_CLUSTER_NODES: elasticsearch:9200
+  ui:
+    image: apache/skywalking-ui:8.0.0
+    container_name: ui
+    depends_on:
+      - oap
+    links:
+      - oap
+    restart: always
+    ports:
+      - 8040:8080
+    environment:
+      SW_OAP_ADDRESS: oap:12800
